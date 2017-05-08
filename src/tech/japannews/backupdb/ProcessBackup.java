@@ -7,7 +7,10 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.text.ParseException;
 import java.time.LocalDateTime;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -20,24 +23,63 @@ public class ProcessBackup {
 		// TODO Auto-generated method stub
 
 		try {
-			BackupMessage("message");
+			String results = BackupMessage("message");
+			if(results.contains("Successfully")){
+				String truncateResult = TruncateMessage("message");
+				System.out.println(truncateResult);
+			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 
-	private static void BackupMessage(String tableName) throws IOException {
+	private static String BackupMessage(String tableName) throws IOException {
 		// TODO Auto-generated method stub
 		URL url = new URL(Const.BACKUP_DB);
 		
 		Map<String,Object> params = new LinkedHashMap<>();
-
-        params.put("date", (String)Utils.formatTime(LocalDateTime.now()));
+		String today_yyyMMdd = (String)Utils.formatTime(LocalDateTime.now(), Const.DATE_PATTERN_YMD);
+		String today_yyyy_MM_dd = Utils.formatTime(LocalDateTime.now(), Const.DATE_PATTERN_Y_M_D);
+			
+		String week_before = "";
+		try {
+			week_before = Utils.GetOneWeekBefore(today_yyyy_MM_dd, Const.DATE_PATTERN_Y_M_D);
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+        params.put("date", today_yyyMMdd);
         params.put("message", tableName);
+        params.put("week_before", week_before);
+        System.out.println("date = " + today_yyyMMdd);
+        System.out.println("week_before = " + week_before);
   
-        String results = PostToServer(url,params);
-        System.out.println(results);
+        return PostToServer(url,params);
+ 
+	}
+	
+	
+	private static String TruncateMessage(String tableName) throws IOException {
+		// TODO Auto-generated method stub
+		URL url = new URL(Const.TRUNCATE_DB);
+		
+		Map<String,Object> params = new LinkedHashMap<>();
+		String today_yyyy_MM_dd = Utils.formatTime(LocalDateTime.now(), Const.DATE_PATTERN_Y_M_D);
+		
+		String week_before = "";
+		try {
+			week_before = Utils.GetOneWeekBefore(today_yyyy_MM_dd, Const.DATE_PATTERN_Y_M_D);
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        params.put("message", tableName);
+        params.put("week_before", week_before);
+  
+        return PostToServer(url,params);
+
 	}
 	
 	
